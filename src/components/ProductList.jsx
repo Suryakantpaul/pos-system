@@ -1,232 +1,198 @@
+/**
+ * ProductList.jsx
+ * Grid/list of products with category tabs, skeleton loaders,
+ * and optimistic add-to-cart feedback.
+ */
+
 import React, { memo, useState, useCallback } from "react";
-import { Plus, Package, AlertCircle } from "lucide-react";
+import { Plus, Tag, Package } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { formatCurrency, truncate } from "../utils";
+import clsx from "clsx";
 
-const CAT = {
-  electronics: { bg: "rgba(59,130,246,0.12)", text: "#93c5fd", dot: "#3b82f6" },
-  grocery:     { bg: "rgba(34,197,94,0.12)",  text: "#86efac", dot: "#22c55e" },
-  beverages:   { bg: "rgba(6,182,212,0.12)",  text: "#67e8f9", dot: "#06b6d4" },
-  clothing:    { bg: "rgba(139,92,246,0.12)", text: "#c4b5fd", dot: "#8b5cf6" },
-  stationery:  { bg: "rgba(245,158,11,0.12)", text: "#fcd34d", dot: "#f59e0b" },
-};
-const DEFAULT_CAT = { bg: "rgba(255,255,255,0.06)", text: "rgba(255,255,255,0.4)", dot: "rgba(255,255,255,0.3)" };
+// ─── Skeleton Card ───────────────────────────────────────────────
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-const Skeleton = () => (
-  <div style={{
-    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)",
-    borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 10,
-  }}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <div className="skeleton" style={{ height: 18, width: 60, borderRadius: 6 }} />
-      <div className="skeleton" style={{ height: 18, width: 18, borderRadius: "50%" }} />
-    </div>
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div className="skeleton" style={{ height: 14, width: "75%", borderRadius: 4 }} />
-      <div className="skeleton" style={{ height: 11, width: "40%", borderRadius: 4 }} />
-    </div>
-    <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
-      <div className="skeleton" style={{ height: 16, width: 50, borderRadius: 4 }} />
-      <div className="skeleton" style={{ height: 12, width: 36, borderRadius: 4 }} />
-    </div>
+const SkeletonCard = () => (
+  <div className="bg-white/[0.03] border border-white/[0.05] rounded-xl p-3 animate-pulse">
+    <div className="w-full aspect-[4/3] bg-white/[0.05] rounded-lg mb-3" />
+    <div className="h-3.5 bg-white/[0.05] rounded w-3/4 mb-2" />
+    <div className="h-3 bg-white/[0.03] rounded w-1/2 mb-3" />
+    <div className="h-5 bg-white/[0.05] rounded w-1/3" />
   </div>
 );
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
+// ─── Product Card ────────────────────────────────────────────────
 
 const ProductCard = memo(({ product, onAdd, justAdded }) => {
-  const [hovered, setHovered] = useState(false);
-  const inStock = (product.stock ?? 999) > 0;
-  const isLow = inStock && product.stock != null && product.stock < 10;
-  const cat = CAT[product.category?.toLowerCase()] ?? DEFAULT_CAT;
+  const inStock = (product.stock ?? product.quantity ?? 999) > 0;
 
   return (
     <button
       onClick={() => inStock && onAdd(product)}
       disabled={!inStock}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", flexDirection: "column", gap: 12,
-        padding: 14, textAlign: "left", borderRadius: 14,
-        border: justAdded
-          ? "1px solid rgba(99,102,241,0.5)"
-          : hovered && inStock
-            ? "1px solid rgba(255,255,255,0.14)"
-            : "1px solid rgba(255,255,255,0.07)",
-        background: justAdded
-          ? "rgba(99,102,241,0.08)"
-          : hovered && inStock
-            ? "rgba(255,255,255,0.05)"
-            : "rgba(255,255,255,0.025)",
-        opacity: inStock ? 1 : 0.38,
-        cursor: inStock ? "pointer" : "not-allowed",
-        transition: "all 0.15s ease",
-        transform: hovered && inStock ? "translateY(-1px)" : "translateY(0)",
-        boxShadow: justAdded ? "0 0 20px rgba(99,102,241,0.15)" : hovered && inStock ? "0 4px 16px rgba(0,0,0,0.3)" : "none",
-        fontFamily: "'DM Sans', sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
+      className={clsx(
+        "group relative bg-white/[0.03] border rounded-xl p-3 text-left",
+        "transition-all duration-150 active:scale-[0.97]",
+        "hover:bg-white/[0.06] hover:border-white/[0.12]",
+        inStock
+          ? "border-white/[0.06] cursor-pointer"
+          : "border-white/[0.03] opacity-40 cursor-not-allowed",
+        justAdded && "ring-1 ring-indigo-500/50 bg-indigo-500/5 border-indigo-500/20"
+      )}
     >
-      {/* Top row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
-        <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase",
-          padding: "3px 7px", borderRadius: 5,
-          background: cat.bg, color: cat.text,
-        }}>
-          {product.category ?? "general"}
+      {/* Category badge */}
+      {product.category && (
+        <span className="absolute top-2 left-2 text-[9px] bg-white/[0.06] text-white/40 px-1.5 py-0.5 rounded-full border border-white/[0.08] uppercase tracking-wider">
+          {product.category}
         </span>
+      )}
 
-        <div style={{
-          width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: justAdded ? "#6366f1" : "rgba(255,255,255,0.06)",
-          border: justAdded ? "none" : "1px solid rgba(255,255,255,0.1)",
-          opacity: justAdded ? 1 : hovered ? 1 : 0,
-          transform: justAdded ? "scale(1.1)" : "scale(1)",
-          transition: "all 0.15s",
-        }}>
-          <Plus size={12} color={justAdded ? "#fff" : "rgba(255,255,255,0.7)"} />
-        </div>
+      {/* Add indicator */}
+      <div
+        className={clsx(
+          "absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all",
+          justAdded
+            ? "bg-indigo-500 scale-110"
+            : "bg-white/[0.04] border border-white/[0.08] opacity-0 group-hover:opacity-100"
+        )}
+      >
+        <Plus size={13} className="text-white" />
       </div>
 
-      {/* Name + SKU */}
-      <div style={{ flex: 1 }}>
-        <p style={{
-          fontSize: 13, fontWeight: 500, lineHeight: 1.4, marginBottom: 3,
-          color: inStock ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.4)",
-        }}>
-          {truncate(product.name, 28)}
-        </p>
-        <p style={{
-          fontFamily: "'DM Mono', monospace", fontSize: 10,
-          color: "rgba(255,255,255,0.22)", letterSpacing: "0.03em",
-        }}>
-          {product.sku}
-        </p>
+      {/* Image / placeholder */}
+      <div className="w-full aspect-[4/3] bg-white/[0.04] rounded-lg mb-2.5 overflow-hidden flex items-center justify-center">
+        {product.imageUrl ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <Package size={24} className="text-white/10" />
+        )}
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 -2px" }} />
+      {/* Name */}
+      <p className="text-white/80 text-sm font-medium leading-snug mb-0.5">
+        {truncate(product.name, 28)}
+      </p>
+
+      {/* SKU */}
+      <p className="text-white/25 text-[10px] font-mono mb-2">
+        {product.sku}
+      </p>
 
       {/* Price + Stock */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{
-          fontFamily: "'DM Mono', monospace", fontSize: 14, fontWeight: 500,
-          color: justAdded ? "#a5b4fc" : "#818cf8",
-          letterSpacing: "-0.01em",
-        }}>
+      <div className="flex items-end justify-between">
+        <span className="text-indigo-400 font-bold text-sm font-mono">
           {formatCurrency(product.price)}
         </span>
-
         {!inStock && (
-          <span style={{ fontSize: 10, color: "#f87171", fontWeight: 500 }}>
-            Out of stock
-          </span>
+          <span className="text-rose-400/70 text-[10px]">Out of stock</span>
         )}
-        {isLow && (
-          <span style={{
-            fontSize: 10, fontWeight: 600, color: "#fbbf24",
-            background: "rgba(245,158,11,0.12)", padding: "2px 6px", borderRadius: 4,
-          }}>
+        {inStock && product.stock != null && product.stock < 10 && (
+          <span className="text-amber-400/70 text-[10px]">
             {product.stock} left
           </span>
         )}
       </div>
-
-      {/* Shimmer on justAdded */}
-      {justAdded && (
-        <div style={{
-          position: "absolute", inset: 0, borderRadius: 14, pointerEvents: "none",
-          background: "linear-gradient(105deg, transparent 40%, rgba(99,102,241,0.12) 50%, transparent 60%)",
-          animation: "shimmer 0.6s ease-out",
-        }} />
-      )}
     </button>
   );
 });
 ProductCard.displayName = "ProductCard";
 
-// ─── Category Tabs ────────────────────────────────────────────────────────────
+// ─── Category Tabs ───────────────────────────────────────────────
 
 const CategoryTabs = memo(({ categories, active, onChange }) => (
-  <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" }}>
-    {["all", ...categories].map((cat) => {
-      const isActive = active === cat;
-      const c = CAT[cat] ?? null;
-      return (
-        <button
-          key={cat}
-          onClick={() => onChange(cat)}
-          style={{
-            flexShrink: 0, fontSize: 11, fontWeight: 600, padding: "5px 12px",
-            borderRadius: 8, border: "1px solid", cursor: "pointer",
-            textTransform: "capitalize", letterSpacing: "0.02em",
-            fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
-            background: isActive ? (c?.bg ?? "rgba(99,102,241,0.15)") : "rgba(255,255,255,0.03)",
-            color: isActive ? (c?.text ?? "#a5b4fc") : "rgba(255,255,255,0.38)",
-            borderColor: isActive ? (c?.dot ?? "rgba(99,102,241,0.4)") : "rgba(255,255,255,0.07)",
-          }}
-        >
-          {cat === "all" ? "All items" : cat}
-        </button>
-      );
-    })}
+  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+    {["all", ...categories].map((cat) => (
+      <button
+        key={cat}
+        onClick={() => onChange(cat)}
+        className={clsx(
+          "shrink-0 text-xs px-3 py-1.5 rounded-lg capitalize font-medium transition-all border",
+          active === cat
+            ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
+            : "bg-white/[0.04] text-white/40 border-white/[0.06] hover:text-white/60 hover:bg-white/[0.06]"
+        )}
+      >
+        {cat}
+      </button>
+    ))}
   </div>
 ));
 CategoryTabs.displayName = "CategoryTabs";
 
-// ─── ProductList ──────────────────────────────────────────────────────────────
+// ─── ProductList ─────────────────────────────────────────────────
 
-export default function ProductList({ products = [], categories = [], activeCategory, onCategoryChange, isLoading, error, query }) {
+export default function ProductList({
+  products = [],
+  categories = [],
+  activeCategory,
+  onCategoryChange,
+  isLoading = false,
+  error = null,
+  query = "",
+}) {
   const addItem = useCartStore((s) => s.addItem);
   const [justAdded, setJustAdded] = useState({});
 
-  const handleAdd = useCallback((product) => {
-    addItem(product);
-    setJustAdded((p) => ({ ...p, [product._id]: true }));
-    setTimeout(() => setJustAdded((p) => ({ ...p, [product._id]: false })), 700);
-  }, [addItem]);
+  const handleAdd = useCallback(
+    (product) => {
+      addItem(product);
+      setJustAdded((prev) => ({ ...prev, [product._id]: true }));
+      setTimeout(
+        () => setJustAdded((prev) => ({ ...prev, [product._id]: false })),
+        600
+      );
+    },
+    [addItem]
+  );
 
-  const filtered = activeCategory && activeCategory !== "all"
-    ? products.filter((p) => p.category?.toLowerCase() === activeCategory.toLowerCase())
-    : products;
+  const filtered =
+    activeCategory && activeCategory !== "all"
+      ? products.filter(
+          (p) => p.category?.toLowerCase() === activeCategory.toLowerCase()
+        )
+      : products;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", overflow: "hidden" }}>
-      {categories.length > 0 && <CategoryTabs categories={categories} active={activeCategory} onChange={onCategoryChange} />}
+    <div className="flex flex-col gap-3 h-full overflow-hidden">
+      {/* Category Tabs */}
+      {categories.length > 0 && (
+        <CategoryTabs
+          categories={categories}
+          active={activeCategory}
+          onChange={onCategoryChange}
+        />
+      )}
 
+      {/* Error */}
       {error && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
-          background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-          borderRadius: 10, color: "#f87171", fontSize: 13,
-        }}>
-          <AlertCircle size={14} />
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-rose-400 text-sm flex items-center gap-2">
+          <Tag size={14} />
           <span>{error}</span>
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: "auto", paddingRight: 2 }}>
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto pr-0.5">
         {isLoading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 8 }}>
-            {Array.from({ length: 12 }).map((_, i) => <Skeleton key={i} />)}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            height: 240, color: "rgba(255,255,255,0.18)", gap: 10,
-          }}>
-            <Package size={36} strokeWidth={1} />
-            <p style={{ fontSize: 13 }}>{query ? `No results for "${query}"` : "No products available"}</p>
+          <div className="flex flex-col items-center justify-center h-64 text-white/20">
+            <Package size={40} className="mb-3 opacity-50" />
+            <p className="text-sm">
+              {query ? `No products found for "${query}"` : "No products available"}
+            </p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 8, paddingBottom: 16 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 pb-4">
             {filtered.map((product) => (
               <ProductCard
                 key={product._id}

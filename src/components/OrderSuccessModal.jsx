@@ -1,107 +1,75 @@
+/**
+ * OrderSuccessModal.jsx
+ * Animated success modal with order summary / receipt view.
+ */
+
 import React, { useEffect, useRef } from "react";
-import { CheckCircle2, Printer, RotateCcw, X, Receipt, Sparkles } from "lucide-react";
+import { CheckCircle2, Printer, RotateCcw, X, Receipt } from "lucide-react";
 import { formatCurrency, formatDateTime, generateReceiptNumber } from "../utils";
 
 const RECEIPT_NO = generateReceiptNumber();
 
 export default function OrderSuccessModal({ order, onClose, onNewOrder }) {
   const modalRef = useRef(null);
-  useEffect(() => { modalRef.current?.focus(); }, []);
+
+  // Trap focus
+  useEffect(() => {
+    modalRef.current?.focus();
+  }, []);
+
+  const handlePrint = () => window.print();
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
-      backdropFilter: "blur(10px)", zIndex: 60,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 16, fontFamily: "'DM Sans', sans-serif",
-    }}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="modal-enter"
-        style={{
-          width: "100%", maxWidth: 380,
-          background: "#0f1117", border: "1px solid rgba(255,255,255,0.09)",
-          borderRadius: 22, boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
-          overflow: "hidden", outline: "none",
-        }}
+        className="w-full max-w-sm bg-[#0f1117] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden outline-none animate-[fadeInScale_0.2s_ease-out]"
+        style={{ animation: "fadeInScale 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
       >
-        {/* Header */}
-        <div style={{
-          position: "relative", display: "flex", flexDirection: "column", alignItems: "center",
-          padding: "32px 24px 22px",
-          background: "linear-gradient(180deg, rgba(16,185,129,0.12) 0%, transparent 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}>
+        {/* Success header */}
+        <div className="relative flex flex-col items-center pt-8 pb-5 px-6 bg-gradient-to-b from-indigo-500/10 to-transparent">
           <button
             onClick={onClose}
-            style={{
-              position: "absolute", top: 14, right: 14,
-              width: 28, height: 28, borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.04)", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "rgba(255,255,255,0.3)",
-            }}
+            className="absolute top-3 right-3 p-1.5 text-white/20 hover:text-white/50 hover:bg-white/[0.05] rounded-lg transition-all"
           >
-            <X size={13} />
+            <X size={15} />
           </button>
 
-          {/* Success icon */}
-          <div style={{ position: "relative", marginBottom: 16 }}>
-            <div style={{
-              width: 68, height: 68, borderRadius: "50%",
-              background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2))",
-              border: "1px solid rgba(16,185,129,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 32px rgba(16,185,129,0.2)",
-            }}>
-              <CheckCircle2 size={34} color="#34d399" strokeWidth={1.5} />
-            </div>
-            <div style={{
-              position: "absolute", top: -4, right: -4, width: 20, height: 20,
-              borderRadius: "50%", background: "#f59e0b",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 12px rgba(245,158,11,0.5)",
-            }}>
-              <Sparkles size={10} color="#fff" />
-            </div>
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 border border-emerald-500/30 flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/10">
+            <CheckCircle2 size={32} className="text-emerald-400" />
           </div>
 
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: "#fff", margin: "0 0 5px" }}>
+          <h2 className="text-white font-bold text-xl font-['Syne'] mb-1">
             Payment Successful
           </h2>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", margin: 0, textAlign: "center" }}>
-            {order?.offline ? "Saved offline — will sync when back online" : "Transaction completed successfully"}
+          <p className="text-white/40 text-sm text-center">
+            {order?.offline
+              ? "Order queued — will sync when online"
+              : "Transaction completed"}
           </p>
         </div>
 
         {/* Receipt */}
-        <div style={{ margin: "14px 16px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
+        <div className="mx-4 mb-4 bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
           {/* Receipt header */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.35)", fontSize: 11 }}>
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05]">
+            <div className="flex items-center gap-1.5 text-white/40 text-xs">
               <Receipt size={12} />
               <span>Receipt</span>
             </div>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.2)" }}>
-              {RECEIPT_NO}
-            </span>
+            <span className="text-white/30 text-[10px] font-mono">{RECEIPT_NO}</span>
           </div>
 
           {/* Items */}
-          {order?.items?.length > 0 && (
-            <div style={{ padding: "10px 14px", maxHeight: 130, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+          {order?.items && (
+            <div className="px-4 py-2 space-y-1.5 max-h-40 overflow-y-auto">
               {order.items.map((item, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{item.name}</span>
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginLeft: 5 }}>× {item.quantity}</span>
-                  </div>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="text-white/50">
+                    {item.name} × {item.quantity}
+                  </span>
+                  <span className="text-white/60 font-mono">
                     {formatCurrency(item.lineTotal)}
                   </span>
                 </div>
@@ -110,78 +78,59 @@ export default function OrderSuccessModal({ order, onClose, onNewOrder }) {
           )}
 
           {/* Totals */}
-          <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: 7 }}>
+          <div className="px-4 py-3 border-t border-white/[0.05] space-y-1.5">
             {order?.subtotal !== undefined && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.33)" }}>Subtotal</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{formatCurrency(order.subtotal)}</span>
+              <div className="flex justify-between text-xs text-white/40">
+                <span>Subtotal</span>
+                <span className="font-mono">{formatCurrency(order.subtotal)}</span>
               </div>
             )}
             {order?.tax !== undefined && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.33)" }}>Tax</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{formatCurrency(order.tax)}</span>
+              <div className="flex justify-between text-xs text-white/40">
+                <span>Tax</span>
+                <span className="font-mono">{formatCurrency(order.tax)}</span>
               </div>
             )}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.07)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#fff" }}>Total Paid</span>
-              <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 500, fontSize: 17, color: "#34d399" }}>
+            <div className="flex justify-between text-white font-bold text-sm pt-1 border-t border-white/[0.06]">
+              <span>Total Paid</span>
+              <span className="font-mono text-emerald-400">
                 {formatCurrency(order?.total ?? 0)}
               </span>
             </div>
           </div>
 
-          {/* Footer */}
-          <div style={{
-            padding: "8px 14px", borderTop: "1px solid rgba(255,255,255,0.04)",
-            display: "flex", justifyContent: "space-between",
-            background: "rgba(255,255,255,0.01)",
-          }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em" }}>
-              {order?.paymentMethod?.toUpperCase() ?? "CASH"}
-            </span>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "rgba(255,255,255,0.2)" }}>
-              {formatDateTime(new Date())}
-            </span>
+          {/* Date */}
+          <div className="px-4 py-2 border-t border-white/[0.04] flex justify-between text-[10px] text-white/20">
+            <span>{order?.paymentMethod?.toUpperCase() ?? "CASH"}</span>
+            <span>{formatDateTime(new Date())}</span>
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{ padding: "0 16px 18px", display: "flex", gap: 8 }}>
+        <div className="px-4 pb-5 flex gap-2">
           <button
-            onClick={() => window.print()}
-            style={{
-              flex: 1, height: 42, borderRadius: 11,
-              border: "1px solid rgba(255,255,255,0.09)",
-              background: "rgba(255,255,255,0.04)", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-              color: "rgba(255,255,255,0.45)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", fontWeight: 500,
-              transition: "all 0.14s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
+            onClick={handlePrint}
+            className="flex-1 h-10 flex items-center justify-center gap-2 bg-white/[0.04] hover:bg-white/[0.07] text-white/50 hover:text-white/70 rounded-xl text-sm transition-all border border-white/[0.06]"
           >
             <Printer size={14} />
             Print
           </button>
           <button
             onClick={onNewOrder}
-            style={{
-              flex: 2, height: 42, borderRadius: 11, border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              color: "#fff", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 4px 18px rgba(99,102,241,0.35)", transition: "all 0.14s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
+            className="flex-1 h-10 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={14} />
             New Order
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.92) translateY(8px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+      `}</style>
     </div>
   );
 }

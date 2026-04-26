@@ -28,22 +28,22 @@ import { parseApiError, isBarcode } from "../utils";
 const MOCK_CATEGORIES = ["electronics", "grocery", "clothing", "beverages", "stationery"];
 
 const MOCK_PRODUCTS = [
-  { _id: "p1", name: "Wireless Earbuds Pro", sku: "ELEC-001", price: 79.99, stock: 15, category: "electronics", imageUrl: null },
-  { _id: "p2", name: "USB-C Hub 7-in-1", sku: "ELEC-002", price: 34.99, stock: 8, category: "electronics", imageUrl: null },
-  { _id: "p3", name: "Mechanical Keyboard", sku: "ELEC-003", price: 129.00, stock: 3, category: "electronics", imageUrl: null },
-  { _id: "p4", name: "Organic Green Tea", sku: "BEV-001", price: 5.49, stock: 100, category: "beverages", imageUrl: null },
-  { _id: "p5", name: "Cold Brew Coffee 500ml", sku: "BEV-002", price: 4.99, stock: 24, category: "beverages", imageUrl: null },
-  { _id: "p6", name: "Sparkling Water Pack", sku: "BEV-003", price: 3.29, stock: 60, category: "beverages", imageUrl: null },
-  { _id: "p7", name: "Whole Wheat Bread", sku: "GRO-001", price: 2.99, stock: 18, category: "grocery", imageUrl: null },
-  { _id: "p8", name: "Organic Almond Milk", sku: "GRO-002", price: 4.49, stock: 12, category: "grocery", imageUrl: null },
-  { _id: "p9", name: "Greek Yogurt 200g", sku: "GRO-003", price: 1.89, stock: 30, category: "grocery", imageUrl: null },
-  { _id: "p10", name: "Slim Fit Chinos", sku: "CLO-001", price: 49.99, stock: 7, category: "clothing", imageUrl: null },
-  { _id: "p11", name: "Cotton Crew Tee", sku: "CLO-002", price: 19.99, stock: 0, category: "clothing", imageUrl: null },
-  { _id: "p12", name: "Notebook A5 80pg", sku: "STN-001", price: 3.49, stock: 50, category: "stationery", imageUrl: null },
-  { _id: "p13", name: "Gel Pen Set 12pc", sku: "STN-002", price: 6.99, stock: 40, category: "stationery", imageUrl: null },
-  { _id: "p14", name: "Sticky Notes Bundle", sku: "STN-003", price: 2.49, stock: 80, category: "stationery", imageUrl: null },
-  { _id: "p15", name: "Bluetooth Speaker", sku: "ELEC-004", price: 59.99, stock: 6, category: "electronics", imageUrl: null },
-  { _id: "p16", name: "Protein Bar Choco", sku: "GRO-004", price: 2.29, stock: 45, category: "grocery", imageUrl: null },
+  { _id: "p1",  name: "Wireless Earbuds Pro",   sku: "ELEC-001", price: 79.99,  stock: 15,  category: "electronics", imageUrl: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&q=80" },
+  { _id: "p2",  name: "USB-C Hub 7-in-1",       sku: "ELEC-002", price: 34.99,  stock: 8,   category: "electronics", imageUrl: "https://images.unsplash.com/photo-1625895197185-efcec01cffe0?w=300&q=80" },
+  { _id: "p3",  name: "Mechanical Keyboard",    sku: "ELEC-003", price: 129.00, stock: 3,   category: "electronics", imageUrl: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=300&q=80" },
+  { _id: "p4",  name: "Organic Green Tea",      sku: "BEV-001",  price: 5.49,   stock: 100, category: "beverages",   imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&q=80" },
+  { _id: "p5",  name: "Cold Brew Coffee 500ml", sku: "BEV-002",  price: 4.99,   stock: 24,  category: "beverages",   imageUrl: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300&q=80" },
+  { _id: "p6",  name: "Sparkling Water Pack",   sku: "BEV-003",  price: 3.29,   stock: 60,  category: "beverages",   imageUrl: "https://images.unsplash.com/photo-1564419320461-6870880221ad?w=300&q=80" },
+  { _id: "p7",  name: "Whole Wheat Bread",      sku: "GRO-001",  price: 2.99,   stock: 18,  category: "grocery",     imageUrl: "https://images.unsplash.com/photo-1549931319-a545dcf3bc7b?w=300&q=80" },
+  { _id: "p8",  name: "Organic Almond Milk",    sku: "GRO-002",  price: 4.49,   stock: 12,  category: "grocery",     imageUrl: "https://images.unsplash.com/photo-1600718374662-0483d2b9da44?w=300&q=80" },
+  { _id: "p9",  name: "Greek Yogurt 200g",      sku: "GRO-003",  price: 1.89,   stock: 30,  category: "grocery",     imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&q=80" },
+  { _id: "p10", name: "Slim Fit Chinos",        sku: "CLO-001",  price: 49.99,  stock: 7,   category: "clothing",    imageUrl: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&q=80" },
+  { _id: "p11", name: "Cotton Crew Tee",        sku: "CLO-002",  price: 19.99,  stock: 0,   category: "clothing",    imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&q=80" },
+  { _id: "p12", name: "Notebook A5 80pg",       sku: "STN-001",  price: 3.49,   stock: 50,  category: "stationery",  imageUrl: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=300&q=80" },
+  { _id: "p13", name: "Gel Pen Set 12pc",       sku: "STN-002",  price: 6.99,   stock: 40,  category: "stationery",  imageUrl: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=300&q=80" },
+  { _id: "p14", name: "Sticky Notes Bundle",    sku: "STN-003",  price: 2.49,   stock: 80,  category: "stationery",  imageUrl: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=300&q=80" },
+  { _id: "p15", name: "Bluetooth Speaker",      sku: "ELEC-004", price: 59.99,  stock: 6,   category: "electronics", imageUrl: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=300&q=80" },
+  { _id: "p16", name: "Protein Bar Choco",      sku: "GRO-004",  price: 2.29,   stock: 45,  category: "grocery",     imageUrl: "https://images.unsplash.com/photo-1622484212850-eb596d769edc?w=300&q=80" },
 ];
 
 // ─── POSPage ──────────────────────────────────────────────────────

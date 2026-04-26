@@ -1,274 +1,155 @@
+/**
+ * DashboardPage.jsx
+ * Admin / Manager dashboard — sales overview, recent orders.
+ * Role-gated: admin + manager only.
+ */
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  BarChart2, TrendingUp, ShoppingBag, Users, DollarSign,
-  ArrowLeft, RefreshCw, ArrowUpRight, ArrowDownRight, Clock,
+  TrendingUp, ShoppingBag, Package, Users,
+  ArrowLeft, RefreshCw, BarChart2,
 } from "lucide-react";
 import { useAuthStore, canViewReports } from "../store/authStore";
 import { formatCurrency, formatDateTime } from "../utils";
+import { orderApi } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Stat Card ───────────────────────────────────────────────────
 
-const MOCK_STATS = [
-  { id: "revenue",  label: "Today's Revenue",  value: 4821.50, change: 12.4, up: true,  Icon: DollarSign, color: "#6366f1", glow: "rgba(99,102,241,0.25)"  },
-  { id: "orders",   label: "Orders Today",     value: 64,      change: 8.1,  up: true,  Icon: ShoppingBag, color: "#22c55e", glow: "rgba(34,197,94,0.2)"   },
-  { id: "customers",label: "Customers Served", value: 51,      change: -3.2, up: false, Icon: Users,       color: "#f59e0b", glow: "rgba(245,158,11,0.2)"  },
-  { id: "avg",      label: "Avg Order Value",  value: 75.33,   change: 4.8,  up: true,  Icon: TrendingUp,  color: "#8b5cf6", glow: "rgba(139,92,246,0.22)" },
-];
-
-const MOCK_ORDERS = [
-  { id: "ORD-0041", time: new Date(Date.now() - 4 * 60000),  items: 3, total: 127.40, method: "card",  status: "completed" },
-  { id: "ORD-0040", time: new Date(Date.now() - 17 * 60000), items: 1, total: 34.99,  method: "upi",   status: "completed" },
-  { id: "ORD-0039", time: new Date(Date.now() - 28 * 60000), items: 5, total: 208.75, method: "cash",  status: "completed" },
-  { id: "ORD-0038", time: new Date(Date.now() - 45 * 60000), items: 2, total: 14.48,  method: "card",  status: "refunded"  },
-  { id: "ORD-0037", time: new Date(Date.now() - 63 * 60000), items: 4, total: 92.10,  method: "cash",  status: "completed" },
-  { id: "ORD-0036", time: new Date(Date.now() - 87 * 60000), items: 1, total: 59.99,  method: "upi",   status: "completed" },
-];
-
-const METHOD_BADGE = {
-  cash: { bg: "rgba(34,197,94,0.1)",  color: "#4ade80", label: "Cash" },
-  card: { bg: "rgba(99,102,241,0.1)", color: "#a5b4fc", label: "Card" },
-  upi:  { bg: "rgba(139,92,246,0.1)", color: "#c4b5fd", label: "UPI"  },
-};
-const STATUS_BADGE = {
-  completed: { bg: "rgba(34,197,94,0.1)",  color: "#4ade80", label: "Paid"     },
-  refunded:  { bg: "rgba(239,68,68,0.1)",  color: "#f87171", label: "Refunded" },
-  pending:   { bg: "rgba(245,158,11,0.1)", color: "#fbbf24", label: "Pending"  },
-};
-
-function timeAgo(d) {
-  const m = Math.round((Date.now() - d) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  return `${Math.round(m / 60)}h ago`;
-}
-
-// ─── StatCard ─────────────────────────────────────────────────────────────────
-
-function StatCard({ stat }) {
-  const { label, value, change, up, Icon, color, glow } = stat;
-  const isCurrency = ["revenue", "avg"].includes(stat.id);
-  const [hovered, setHovered] = useState(false);
+function StatCard({ label, value, delta, Icon, color }) {
+  const colors = {
+    indigo: "from-indigo-500/20 to-indigo-600/5 border-indigo-500/20 text-indigo-400",
+    emerald: "from-emerald-500/20 to-emerald-600/5 border-emerald-500/20 text-emerald-400",
+    amber: "from-amber-500/20 to-amber-600/5 border-amber-500/20 text-amber-400",
+    violet: "from-violet-500/20 to-violet-600/5 border-violet-500/20 text-violet-400",
+  };
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
-        borderRadius: 16, padding: "18px 20px",
-        display: "flex", flexDirection: "column", gap: 14,
-        transition: "all 0.18s", cursor: "default",
-        boxShadow: hovered ? `0 8px 32px ${glow}` : "none",
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", letterSpacing: "0.02em" }}>{label}</span>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10,
-          background: `${color}18`, border: `1px solid ${color}30`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon size={16} color={color} />
+    <div className={`bg-gradient-to-br ${colors[color]} border rounded-2xl p-5`}>
+      <div className="flex items-start justify-between mb-4">
+        <p className="text-white/50 text-sm">{label}</p>
+        <div className={`p-2 rounded-xl bg-white/[0.04]`}>
+          <Icon size={16} />
         </div>
       </div>
-
-      <div>
-        <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 500, fontSize: 26, color: "#fff", letterSpacing: "-0.02em" }}>
-          {isCurrency ? formatCurrency(value) : value.toLocaleString()}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 5 }}>
-          {up ? <ArrowUpRight size={13} color="#4ade80" /> : <ArrowDownRight size={13} color="#f87171" />}
-          <span style={{ fontSize: 11, fontWeight: 600, color: up ? "#4ade80" : "#f87171" }}>
-            {Math.abs(change)}%
+      <p className="text-white text-2xl font-bold font-['Syne'] tabular-nums">{value}</p>
+      {delta && (
+        <p className="text-white/40 text-xs mt-1">
+          <span className={delta.startsWith("+") ? "text-emerald-400" : "text-rose-400"}>
+            {delta}
           </span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>vs yesterday</span>
-        </div>
-      </div>
+          {" "}vs yesterday
+        </p>
+      )}
     </div>
   );
 }
 
-// ─── DashboardPage ────────────────────────────────────────────────────────────
+// ─── DashboardPage ───────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { role } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState([]);
-  const [stats, setStats] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const load = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    else setRefreshing(true);
-    await new Promise(r => setTimeout(r, 500));
-    setStats(MOCK_STATS);
-    setOrders(MOCK_ORDERS);
-    setIsLoading(false);
-    setRefreshing(false);
-  };
-
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        // const res = await orderApi.list({ limit: 10 });
+        // Mock data:
+        await new Promise((r) => setTimeout(r, 500));
+        setOrders([
+          { _id: "o1", total: 128.45, paymentMethod: "card",  createdAt: new Date(), items: [{name:"Earbuds",quantity:1},{name:"Green Tea",quantity:3}] },
+          { _id: "o2", total: 34.99,  paymentMethod: "cash",  createdAt: new Date(Date.now()-120000), items: [{name:"USB Hub",quantity:1}] },
+          { _id: "o3", total: 17.46,  paymentMethod: "upi",   createdAt: new Date(Date.now()-300000), items: [{name:"Notebook",quantity:2},{name:"Pen Set",quantity:1}] },
+          { _id: "o4", total: 59.97,  paymentMethod: "cash",  createdAt: new Date(Date.now()-600000), items: [{name:"Speaker",quantity:1}] },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   if (!canViewReports(role)) {
     return (
-      <div style={{
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        height: "100vh", background: "#080a0e", gap: 14, fontFamily: "'DM Sans', sans-serif",
-      }}>
-        <div style={{ fontSize: 40 }}>🔒</div>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>You don't have permission to view this page.</p>
-        <Link to="/pos" style={{ fontSize: 13, color: "#818cf8", textDecoration: "none" }}>← Back to POS</Link>
+      <div className="flex flex-col items-center justify-center h-screen bg-[#0a0c10] text-white/30 gap-4">
+        <BarChart2 size={40} strokeWidth={1} />
+        <p>You don't have permission to view this page.</p>
+        <Link to="/pos" className="text-indigo-400 text-sm hover:underline">← Back to POS</Link>
       </div>
     );
   }
 
+  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+
   return (
-    <div style={{ minHeight: "100vh", background: "#080a0e", fontFamily: "'DM Sans', sans-serif", color: "rgba(255,255,255,0.85)" }}>
-
+    <div className="min-h-screen bg-[#0a0c10] text-white font-['DM_Sans'] p-6">
       {/* Header */}
-      <div style={{
-        borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 28px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "#0d0f14",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <Link
-            to="/pos"
-            style={{
-              width: 34, height: 34, borderRadius: 9,
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "rgba(255,255,255,0.04)", display: "flex",
-              alignItems: "center", justifyContent: "center",
-              color: "rgba(255,255,255,0.45)", textDecoration: "none", flexShrink: 0,
-            }}
-          >
-            <ArrowLeft size={15} />
-          </Link>
-          <div>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>
-              Dashboard
-            </h1>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>
-              {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          </div>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold font-['Syne']">Dashboard</h1>
+          <p className="text-white/40 text-sm">Today's overview</p>
         </div>
-        <button
-          onClick={() => load(true)}
-          disabled={refreshing}
-          style={{
-            display: "flex", alignItems: "center", gap: 7, padding: "8px 14px",
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 9, cursor: "pointer", color: "rgba(255,255,255,0.5)",
-            fontSize: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.14s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+        <Link
+          to="/pos"
+          className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-white/60 hover:text-white/80 rounded-xl text-sm transition-all"
         >
-          <RefreshCw size={13} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
-          Refresh
-        </button>
+          <ArrowLeft size={14} />
+          POS Terminal
+        </Link>
       </div>
 
-      <div style={{ padding: "24px 28px", maxWidth: 1100 }}>
-        {isLoading ? (
-          <LoadingSpinner size="lg" label="Loading dashboard…" />
-        ) : (
-          <>
-            {/* Stats grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 28 }}>
-              {stats.map(s => <StatCard key={s.id} stat={s} />)}
+      {isLoading ? (
+        <LoadingSpinner size="lg" label="Loading dashboard…" className="mt-20" />
+      ) : (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard label="Revenue Today" value={formatCurrency(totalRevenue)} delta="+12.4%" Icon={TrendingUp} color="indigo" />
+            <StatCard label="Orders" value={orders.length} delta="+3" Icon={ShoppingBag} color="emerald" />
+            <StatCard label="Items Sold" value={orders.reduce((s,o)=>s+o.items.reduce((a,i)=>a+i.quantity,0),0)} delta="+8" Icon={Package} color="amber" />
+            <StatCard label="Customers" value={orders.length} delta="+2" Icon={Users} color="violet" />
+          </div>
+
+          {/* Recent Orders */}
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <h2 className="font-semibold font-['Syne'] text-sm">Recent Orders</h2>
+              <button className="p-1.5 text-white/20 hover:text-white/50 hover:bg-white/[0.04] rounded-lg transition-all">
+                <RefreshCw size={14} />
+              </button>
             </div>
 
-            {/* Recent Orders */}
-            <div style={{
-              background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 16, overflow: "hidden",
-            }}>
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <Clock size={14} color="#818cf8" />
-                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13, color: "#fff" }}>
-                    Recent Orders
-                  </span>
-                </div>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Today</span>
-              </div>
-
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      {["Order ID", "Time", "Items", "Total", "Method", "Status"].map(h => (
-                        <th key={h} style={{
-                          padding: "10px 20px", textAlign: "left",
-                          fontWeight: 500, fontSize: 10, letterSpacing: "0.07em",
-                          color: "rgba(255,255,255,0.3)", textTransform: "uppercase",
-                        }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order, i) => {
-                      const mb = METHOD_BADGE[order.method] ?? METHOD_BADGE.cash;
-                      const sb = STATUS_BADGE[order.status] ?? STATUS_BADGE.completed;
-                      return (
-                        <tr
-                          key={order.id}
-                          style={{
-                            borderBottom: i < orders.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                            transition: "background 0.12s",
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
-                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                        >
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#818cf8" }}>{order.id}</span>
-                          </td>
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{ color: "rgba(255,255,255,0.4)" }}>{timeAgo(order.time)}</span>
-                          </td>
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{ color: "rgba(255,255,255,0.55)" }}>{order.items} item{order.items !== 1 ? "s" : ""}</span>
-                          </td>
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 500, color: "rgba(255,255,255,0.8)" }}>
-                              {formatCurrency(order.total)}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{
-                              fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 5,
-                              background: mb.bg, color: mb.color,
-                            }}>{mb.label}</span>
-                          </td>
-                          <td style={{ padding: "12px 20px" }}>
-                            <span style={{
-                              fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 5,
-                              background: sb.bg, color: sb.color,
-                            }}>{sb.label}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.04]">
+                  {["Order ID", "Items", "Method", "Total", "Time"].map((h) => (
+                    <th key={h} className="text-left px-5 py-2.5 text-white/30 text-xs font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order._id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3 text-white/50 font-mono text-xs">{order._id}</td>
+                    <td className="px-5 py-3 text-white/60 text-xs truncate max-w-[180px]">
+                      {order.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="text-[10px] bg-white/[0.06] text-white/40 px-2 py-0.5 rounded-full capitalize">{order.paymentMethod}</span>
+                    </td>
+                    <td className="px-5 py-3 font-mono text-indigo-300 font-medium">{formatCurrency(order.total)}</td>
+                    <td className="px-5 py-3 text-white/30 text-xs">{formatDateTime(order.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

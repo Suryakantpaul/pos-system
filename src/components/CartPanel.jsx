@@ -1,23 +1,7 @@
 /**
- * CartPanel.jsx — Fixed & Polished
- *
- * FIXES APPLIED:
- * 1. Replaced ALL Tailwind utility classes with inline styles on the cart container
- *    so the panel renders correctly even if Tailwind JIT misses the `hidden md:flex`
- *    wrapper class in POSPage (which was causing the panel to not display at all,
- *    or display with no styling applied).
- * 2. Fixed the CartItem layout — qty controls are now clearly separated from info.
- * 3. Fixed the "Cart3" header rendering bug — was caused by the badge count
- *    rendering inline without spacing. Now properly spaced with a pill badge.
- * 4. Fixed X remove button visibility — was `opacity-0` only showing on hover,
- *    now always visible (subtle) for better UX.
- * 5. Added proper scrollable item area with fixed header + footer.
- * 6. Full inline-style fallback so panel works regardless of Tailwind purge state.
- *
- * HOW TO USE:
- * Replace pos-system/src/components/CartPanel.jsx with this file.
- * Also apply the POSPage.jsx fix below (remove className="hidden md:flex",
- * use style only).
+ * CartPanel.jsx
+ * Right-side cart panel — items, quantity controls, totals.
+ * Keyboard-navigable, real-time totals, per-item discount.
  */
 
 import React, { memo, useState, useCallback } from "react";
@@ -28,141 +12,72 @@ import {
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore, canApplyDiscounts } from "../store/authStore";
 import { formatCurrency, truncate } from "../utils";
-
-// ─── Shared style tokens ──────────────────────────────────────────
-const C = {
-  bg:          "#0d0f14",
-  bgDeep:      "#0a0c10",
-  border:      "rgba(255,255,255,0.06)",
-  borderSoft:  "rgba(255,255,255,0.04)",
-  text:        "rgba(255,255,255,0.82)",
-  textMuted:   "rgba(255,255,255,0.38)",
-  textFaint:   "rgba(255,255,255,0.18)",
-  accent:      "#6366f1",
-  accentSoft:  "rgba(99,102,241,0.18)",
-  accentText:  "#a5b4fc",
-  rose:        "rgba(244,63,94,0.18)",
-  roseText:    "#fb7185",
-  emerald:     "rgba(16,185,129,0.15)",
-  emeraldText: "#34d399",
-};
+import clsx from "clsx";
 
 // ─── CartItem ────────────────────────────────────────────────────
 
 const CartItem = memo(({ item, onQuantityChange, onRemove, onDiscountChange, canDiscount }) => {
   const [editingDiscount, setEditingDiscount] = useState(false);
-  const [discountInput, setDiscountInput] = useState(String(item.discount ?? 0));
-  const lineTotal = (item.price - (item.discount ?? 0)) * item.quantity;
+  const [discountInput, setDiscountInput] = useState(String(item.discount));
+  const lineTotal = (item.price - item.discount) * item.quantity;
 
   const commitDiscount = () => {
     const val = parseFloat(discountInput);
-    if (!isNaN(val) && val >= 0) onDiscountChange(item.productId, val);
+    if (!isNaN(val)) onDiscountChange(item.productId, val);
     setEditingDiscount(false);
   };
 
   return (
-    <div style={{
-      display: "flex",
-      gap: 10,
-      padding: "10px 12px",
-      borderRadius: 12,
-      border: "1px solid transparent",
-      transition: "background 0.15s, border-color 0.15s",
-      marginBottom: 2,
-    }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.025)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.borderColor = "transparent";
-      }}
-    >
-      {/* Qty Controls — vertical stack */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, paddingTop: 2, flexShrink: 0 }}>
+    <div className="group flex gap-2.5 p-2.5 rounded-xl hover:bg-white/[0.03] transition-colors border border-transparent hover:border-white/[0.05]">
+      {/* Qty Controls */}
+      <div className="flex flex-col items-center gap-1 pt-0.5">
         <button
           onClick={() => onQuantityChange(item.productId, item.quantity + 1)}
+          className="w-6 h-6 rounded-md bg-white/[0.04] hover:bg-indigo-500/20 text-white/40 hover:text-indigo-300 flex items-center justify-center transition-all active:scale-95"
           aria-label="Increase quantity"
-          style={{
-            width: 24, height: 24, borderRadius: 7,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            color: C.textMuted, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s", padding: 0,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.accentSoft; e.currentTarget.style.color = C.accentText; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = C.textMuted; }}
         >
           <Plus size={11} />
         </button>
-
-        <span style={{
-          color: C.text, fontSize: 13, fontWeight: 700,
-          width: 20, textAlign: "center", lineHeight: 1,
-          fontFamily: "'DM Mono', monospace",
-        }}>
+        <span className="text-white/80 text-sm font-bold tabular-nums w-5 text-center leading-none">
           {item.quantity}
         </span>
-
         <button
           onClick={() => onQuantityChange(item.productId, item.quantity - 1)}
+          className="w-6 h-6 rounded-md bg-white/[0.04] hover:bg-rose-500/20 text-white/40 hover:text-rose-300 flex items-center justify-center transition-all active:scale-95"
           aria-label="Decrease quantity"
-          style={{
-            width: 24, height: 24, borderRadius: 7,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            color: C.textMuted, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s", padding: 0,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.rose; e.currentTarget.style.color = C.roseText; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = C.textMuted; }}
         >
           <Minus size={11} />
         </button>
       </div>
 
       {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 4, marginBottom: 2 }}>
-          <p style={{
-            color: C.text, fontSize: 13, fontWeight: 500,
-            lineHeight: 1.35, margin: 0,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            maxWidth: 120,
-          }}>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-1">
+          <p className="text-white/80 text-sm font-medium leading-snug truncate">
             {truncate(item.name, 22)}
           </p>
           <button
             onClick={() => onRemove(item.productId)}
+            className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-rose-400 transition-all shrink-0 mt-0.5"
             aria-label="Remove item"
-            style={{
-              background: "none", border: "none", cursor: "pointer", padding: 2,
-              color: C.textFaint, borderRadius: 4, flexShrink: 0,
-              display: "flex", alignItems: "center", transition: "color 0.15s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = C.roseText}
-            onMouseLeave={e => e.currentTarget.style.color = C.textFaint}
           >
             <X size={13} />
           </button>
         </div>
 
-        <p style={{ color: C.textFaint, fontSize: 10, fontFamily: "'DM Mono', monospace", margin: "0 0 6px" }}>
-          {item.sku}
-        </p>
+        <p className="text-white/30 text-[10px] font-mono">{item.sku}</p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: C.textMuted, fontSize: 11, fontFamily: "'DM Mono', monospace" }}>
+        <div className="flex items-center gap-2 mt-1.5">
+          {/* Unit price */}
+          <span className="text-white/40 text-xs font-mono">
             {formatCurrency(item.price)} ea
           </span>
 
+          {/* Discount */}
           {canDiscount && (
             editingDiscount ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <span style={{ fontSize: 11, color: C.textMuted }}>−$</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-white/30">−$</span>
                 <input
                   autoFocus
                   type="number"
@@ -170,32 +85,26 @@ const CartItem = memo(({ item, onQuantityChange, onRemove, onDiscountChange, can
                   max={item.price}
                   step="0.01"
                   value={discountInput}
-                  onChange={e => setDiscountInput(e.target.value)}
+                  onChange={(e) => setDiscountInput(e.target.value)}
                   onBlur={commitDiscount}
-                  onKeyDown={e => e.key === "Enter" && commitDiscount()}
-                  style={{
-                    width: 52, background: "rgba(99,102,241,0.1)",
-                    border: "1px solid rgba(99,102,241,0.3)",
-                    borderRadius: 5, padding: "2px 5px",
-                    fontSize: 11, color: C.text,
-                    fontFamily: "'DM Mono', monospace",
-                    outline: "none",
-                  }}
+                  onKeyDown={(e) => e.key === "Enter" && commitDiscount()}
+                  className="w-14 bg-white/[0.06] border border-indigo-500/30 rounded text-xs text-white/80 px-1 py-0.5 outline-none font-mono"
                 />
               </div>
             ) : (
               <button
-                onClick={() => { setDiscountInput(String(item.discount ?? 0)); setEditingDiscount(true); }}
-                style={{
-                  background: (item.discount ?? 0) > 0 ? C.emerald : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${(item.discount ?? 0) > 0 ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.07)"}`,
-                  color: (item.discount ?? 0) > 0 ? C.emeraldText : C.textFaint,
-                  borderRadius: 5, padding: "2px 7px", fontSize: 10,
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: 3,
-                  fontFamily: "'DM Mono', monospace", transition: "all 0.15s",
+                onClick={() => {
+                  setDiscountInput(String(item.discount));
+                  setEditingDiscount(true);
                 }}
+                className={clsx(
+                  "text-[10px] px-1.5 py-0.5 rounded border transition-all",
+                  item.discount > 0
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-white/[0.03] text-white/20 border-white/[0.06] hover:text-white/40"
+                )}
               >
-                {(item.discount ?? 0) > 0 ? `−${formatCurrency(item.discount)}` : <Tag size={9} />}
+                {item.discount > 0 ? `−${formatCurrency(item.discount)}` : <Tag size={9} />}
               </button>
             )
           )}
@@ -203,19 +112,12 @@ const CartItem = memo(({ item, onQuantityChange, onRemove, onDiscountChange, can
       </div>
 
       {/* Line Total */}
-      <div style={{ textAlign: "right", flexShrink: 0, paddingTop: 2 }}>
-        <span style={{
-          color: C.text, fontSize: 13, fontWeight: 700,
-          fontFamily: "'DM Mono', monospace",
-        }}>
+      <div className="text-right shrink-0 pt-0.5">
+        <span className="text-white/80 text-sm font-bold font-mono tabular-nums">
           {formatCurrency(lineTotal)}
         </span>
-        {(item.discount ?? 0) > 0 && (
-          <p style={{
-            color: C.textFaint, fontSize: 10,
-            fontFamily: "'DM Mono', monospace",
-            textDecoration: "line-through", margin: "2px 0 0",
-          }}>
+        {item.discount > 0 && (
+          <p className="text-white/25 text-[10px] line-through font-mono">
             {formatCurrency(item.price * item.quantity)}
           </p>
         )}
@@ -238,82 +140,58 @@ export default function CartPanel({ onCheckout }) {
   const canDiscount = canApplyDiscounts(role);
   const [showNote, setShowNote] = useState(false);
 
-  const handleQty      = useCallback((id, qty) => setQuantity(id, qty),       [setQuantity]);
-  const handleRemove   = useCallback((id) => removeItem(id),                  [removeItem]);
-  const handleDiscount = useCallback((id, val) => setItemDiscount(id, val),   [setItemDiscount]);
+  const handleQty = useCallback(
+    (id, qty) => setQuantity(id, qty),
+    [setQuantity]
+  );
+  const handleRemove = useCallback(
+    (id) => removeItem(id),
+    [removeItem]
+  );
+  const handleDiscountChange = useCallback(
+    (id, val) => setItemDiscount(id, val),
+    [setItemDiscount]
+  );
 
-  const grandTotal = Math.max(0, total - (discount ?? 0));
+  const grandTotal = Math.max(0, total - discount);
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-      background: C.bg,
-      borderLeft: `1px solid ${C.border}`,
-      overflow: "hidden",
-    }}>
-
-      {/* ── Header ── */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px",
-        borderBottom: `1px solid ${C.border}`,
-        flexShrink: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ShoppingCart size={16} style={{ color: C.accentText }} />
-          <span style={{
-            color: C.text, fontWeight: 600, fontSize: 13,
-            fontFamily: "'Syne', sans-serif", letterSpacing: "0.01em",
-          }}>
+    <div className="flex flex-col h-full bg-[#0d0f14] border-l border-white/[0.06]">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center gap-2">
+          <ShoppingCart size={16} className="text-indigo-400" />
+          <span className="text-white/80 font-semibold text-sm font-['Syne']">
             Cart
           </span>
           {items.length > 0 && (
-            <span style={{
-              background: C.accentSoft,
-              color: C.accentText,
-              fontSize: 10, fontWeight: 600,
-              padding: "2px 7px",
-              borderRadius: 99,
-              border: "1px solid rgba(99,102,241,0.2)",
-              lineHeight: 1.5,
-            }}>
+            <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded-full border border-indigo-500/20 font-medium">
               {items.length}
             </span>
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div className="flex items-center gap-1">
+          {/* Note toggle */}
           <button
-            onClick={() => setShowNote(v => !v)}
+            onClick={() => setShowNote((v) => !v)}
+            className={clsx(
+              "p-1.5 rounded-lg transition-colors",
+              showNote
+                ? "text-amber-400 bg-amber-500/10"
+                : "text-white/20 hover:text-white/50 hover:bg-white/[0.04]"
+            )}
             title="Add note"
-            style={{
-              padding: 7, borderRadius: 8, cursor: "pointer",
-              background: showNote ? "rgba(251,191,36,0.12)" : "transparent",
-              border: "1px solid transparent",
-              color: showNote ? "#fbbf24" : C.textMuted,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.15s",
-            }}
           >
             <FileText size={14} />
           </button>
 
+          {/* Clear cart */}
           {items.length > 0 && (
             <button
               onClick={clearCart}
+              className="p-1.5 text-white/20 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
               title="Clear cart (Ctrl+Delete)"
-              style={{
-                padding: 7, borderRadius: 8, cursor: "pointer",
-                background: "transparent",
-                border: "1px solid transparent",
-                color: C.textMuted,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.rose; e.currentTarget.style.color = C.roseText; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.textMuted; }}
             >
               <Trash2 size={14} />
             </button>
@@ -321,82 +199,46 @@ export default function CartPanel({ onCheckout }) {
         </div>
       </div>
 
-      {/* ── Customer ── */}
-      <div style={{
-        padding: "8px 14px",
-        borderBottom: `1px solid ${C.borderSoft}`,
-        flexShrink: 0,
-      }}>
-        <button style={{
-          display: "flex", alignItems: "center", gap: 7,
-          background: "none", border: "none", cursor: "pointer",
-          color: C.textMuted, fontSize: 12,
-          width: "100%", textAlign: "left",
-          transition: "color 0.15s", padding: 0,
-        }}
-          onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
-          onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-        >
+      {/* Customer */}
+      <div className="px-3 py-2 border-b border-white/[0.04] shrink-0">
+        <button className="flex items-center gap-2 w-full text-left text-white/30 hover:text-white/50 transition-colors text-xs">
           <UserCircle size={14} />
           <span>{customer?.name ?? "Walk-in Customer"}</span>
         </button>
       </div>
 
-      {/* ── Note ── */}
+      {/* Note */}
       {showNote && (
-        <div style={{
-          padding: "8px 12px",
-          borderBottom: `1px solid ${C.borderSoft}`,
-          flexShrink: 0,
-        }}>
+        <div className="px-3 py-2 border-b border-white/[0.04] shrink-0">
           <textarea
             value={note}
-            onChange={e => setNote(e.target.value)}
+            onChange={(e) => setNote(e.target.value)}
             placeholder="Order note…"
             rows={2}
-            style={{
-              width: "100%", background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 10, padding: "8px 12px",
-              fontSize: 12, color: "rgba(255,255,255,0.6)",
-              outline: "none", resize: "none",
-              fontFamily: "'DM Sans', sans-serif",
-              boxSizing: "border-box",
-            }}
+            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white/60 placeholder:text-white/20 outline-none focus:border-white/20 resize-none"
           />
         </div>
       )}
 
-      {/* ── Items List ── */}
-      <div style={{
-        flex: 1, overflowY: "auto",
-        padding: "6px 6px",
-        scrollbarWidth: "thin",
-        scrollbarColor: "rgba(255,255,255,0.08) transparent",
-      }}>
+      {/* Items */}
+      <div className="flex-1 overflow-y-auto px-2 py-1">
         {items.length === 0 ? (
-          <div style={{
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            height: "100%", color: C.textFaint, gap: 12,
-          }}>
-            <ShoppingCart size={36} strokeWidth={1} style={{ opacity: 0.4 }} />
-            <div style={{ textAlign: "center" }}>
-              <p style={{ margin: 0, fontSize: 13 }}>Cart is empty</p>
-              <p style={{ margin: "4px 0 0", fontSize: 11, opacity: 0.6 }}>
-                Click a product or press F2 to search
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-full text-white/15 gap-3">
+            <ShoppingCart size={36} strokeWidth={1} />
+            <p className="text-sm text-center leading-snug">
+              Cart is empty<br />
+              <span className="text-[11px] text-white/10">Click a product or press F2 to search</span>
+            </p>
           </div>
         ) : (
-          <div>
-            {items.map(item => (
+          <div className="space-y-0.5">
+            {items.map((item) => (
               <CartItem
                 key={item.productId}
                 item={item}
                 onQuantityChange={handleQty}
                 onRemove={handleRemove}
-                onDiscountChange={handleDiscount}
+                onDiscountChange={handleDiscountChange}
                 canDiscount={canDiscount}
               />
             ))}
@@ -404,85 +246,35 @@ export default function CartPanel({ onCheckout }) {
         )}
       </div>
 
-      {/* ── Totals + Checkout ── */}
+      {/* Totals */}
       {items.length > 0 && (
-        <div style={{
-          borderTop: `1px solid ${C.border}`,
-          padding: "14px 16px",
-          flexShrink: 0,
-          background: C.bgDeep,
-        }}>
-          {/* Subtotal */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: C.textMuted, fontSize: 12 }}>Subtotal</span>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
-              {formatCurrency(subtotal)}
-            </span>
+        <div className="border-t border-white/[0.06] px-4 py-3 space-y-1.5 shrink-0 bg-[#0a0c10]">
+          <div className="flex justify-between text-xs text-white/40">
+            <span>Subtotal</span>
+            <span className="font-mono">{formatCurrency(subtotal)}</span>
           </div>
-
-          {/* Tax */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: C.textMuted, fontSize: 12 }}>
-              Tax ({(parseFloat(import.meta.env.VITE_TAX_RATE ?? 0.08) * 100).toFixed(0)}%)
-            </span>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
-              {formatCurrency(tax)}
-            </span>
+          <div className="flex justify-between text-xs text-white/40">
+            <span>Tax ({(parseFloat(import.meta.env.VITE_TAX_RATE ?? 0.08) * 100).toFixed(0)}%)</span>
+            <span className="font-mono">{formatCurrency(tax)}</span>
           </div>
-
-          {/* Discount */}
-          {(discount ?? 0) > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ color: C.emeraldText, fontSize: 12 }}>Discount</span>
-              <span style={{ color: C.emeraldText, fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
-                −{formatCurrency(discount)}
-              </span>
+          {discount > 0 && (
+            <div className="flex justify-between text-xs text-emerald-400">
+              <span>Discount</span>
+              <span className="font-mono">−{formatCurrency(discount)}</span>
             </div>
           )}
-
-          {/* Divider */}
-          <div style={{ borderTop: `1px solid ${C.border}`, margin: "10px 0" }} />
-
-          {/* Total */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <span style={{
-              color: C.text, fontWeight: 700, fontSize: 15,
-              fontFamily: "'Syne', sans-serif",
-            }}>
-              Total
-            </span>
-            <span style={{
-              color: C.accentText, fontWeight: 700, fontSize: 18,
-              fontFamily: "'DM Mono', monospace",
-            }}>
-              {formatCurrency(grandTotal)}
-            </span>
+          <div className="flex justify-between text-white font-bold text-base pt-1 border-t border-white/[0.06]">
+            <span className="font-['Syne']">Total</span>
+            <span className="font-mono text-indigo-300">{formatCurrency(grandTotal)}</span>
           </div>
 
           {/* Checkout Button */}
           <button
             onClick={onCheckout}
-            style={{
-              width: "100%", height: 44,
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-              border: "none", borderRadius: 12,
-              color: "#fff", fontWeight: 700, fontSize: 14,
-              fontFamily: "'Syne', sans-serif", letterSpacing: "0.02em",
-              cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 4px 20px rgba(99,102,241,0.25)",
-              transition: "all 0.15s",
-              position: "relative", overflow: "hidden",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.92"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(99,102,241,0.35)"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(99,102,241,0.25)"; }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "translateY(-1px)"}
+            className="w-full mt-2 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-indigo-500/20 font-['Syne']"
           >
             Checkout
-            <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 400, fontFamily: "'DM Mono', monospace" }}>
-              F12
-            </span>
+            <span className="text-white/50 text-xs font-normal font-mono">F12</span>
             <ChevronRight size={15} />
           </button>
         </div>

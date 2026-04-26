@@ -1,124 +1,98 @@
+/**
+ * Navbar.jsx
+ * Top navigation bar for the POS system
+ */
+
 import React from "react";
-import { Link } from "react-router-dom";
-import { ShoppingCart, Wifi, WifiOff, BarChart2, Settings, Zap } from "lucide-react";
+import { ShoppingCart, Wifi, WifiOff, User, Settings, BarChart2, LogOut } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore, ROLES, canViewReports } from "../store/authStore";
 import { useOnlineStatus } from "../hooks";
+import { formatDateTime } from "../utils";
 import clsx from "clsx";
 
-const ROLE_STYLE = {
-  [ROLES.ADMIN]:   { bg: "#3b0764", text: "#e879f9", border: "#7e22ce" },
-  [ROLES.MANAGER]: { bg: "#431407", text: "#fb923c", border: "#9a3412" },
-  [ROLES.CASHIER]: { bg: "#052e16", text: "#4ade80", border: "#166534" },
+const ROLE_COLORS = {
+  [ROLES.ADMIN]: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+  [ROLES.MANAGER]: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  [ROLES.CASHIER]: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
 };
 
-export default function Navbar({ onOpenSettings }) {
+export default function Navbar({ onOpenSettings, onOpenReports }) {
   const cartCount = useCartStore((s) => s.items.reduce((a, i) => a + i.quantity, 0));
-  const { user, role, switchRole } = useAuthStore();
+  const { user, role, logout, switchRole } = useAuthStore();
   const isOnline = useOnlineStatus();
   const [now, setNow] = React.useState(new Date());
 
+  // Live clock
   React.useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const rs = ROLE_STYLE[role] ?? ROLE_STYLE[ROLES.CASHIER];
-
   return (
-    <header style={{
-      height: 56,
-      background: "#0d0f14",
-      borderBottom: "1px solid rgba(255,255,255,0.07)",
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      padding: "0 16px",
-      gap: 10,
-      flexShrink: 0,
-      zIndex: 50,
-      fontFamily: "'DM Sans', sans-serif",
-      width: "100%",
-      overflow: "hidden",
-    }}>
-
+    <header className="h-14 bg-[#0f1117] border-b border-white/[0.06] flex items-center px-4 gap-4 z-50 shrink-0">
       {/* Brand */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-          background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 16px rgba(99,102,241,0.35)",
-        }}>
-          <Zap size={16} color="#fff" />
+      <div className="flex items-center gap-2.5 select-none">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <ShoppingCart size={16} className="text-white" />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{
-            fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 15, color: "#fff", letterSpacing: "-0.02em", whiteSpace: "nowrap",
-          }}>RetailOS</span>
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 13 }}>·</span>
-          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>POS v1.0</span>
-        </div>
+        <span className="font-['Syne'] font-bold text-white text-[15px] tracking-tight hidden sm:block">
+          RetailOS
+        </span>
+        <span className="text-white/20 hidden sm:block">·</span>
+        <span className="text-white/40 text-xs font-mono hidden sm:block">POS</span>
       </div>
 
-      {/* Flex spacer */}
-      <div style={{ flex: 1 }} />
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Clock */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, lineHeight: 1.3 }}>
-        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: "rgba(255,255,255,0.75)", letterSpacing: "0.04em" }}>
+      <div className="hidden md:flex flex-col items-end leading-tight">
+        <span className="text-white/80 text-sm font-mono tabular-nums">
           {now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </span>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+        <span className="text-white/30 text-[10px]">
           {now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
         </span>
       </div>
 
-      <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
+      <div className="w-px h-5 bg-white/10 hidden md:block" />
 
-      {/* Online status */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
-        padding: "4px 10px", borderRadius: 99,
-        background: isOnline ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-        border: `1px solid ${isOnline ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
-        color: isOnline ? "#4ade80" : "#f87171",
-        fontSize: 11, fontWeight: 500,
-      }}>
+      {/* Online Status */}
+      <div
+        className={clsx(
+          "flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium",
+          isOnline
+            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+            : "bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse"
+        )}
+      >
         {isOnline ? <Wifi size={11} /> : <WifiOff size={11} />}
-        <span>{isOnline ? "Online" : "Offline"}</span>
+        <span className="hidden sm:inline">{isOnline ? "Online" : "Offline"}</span>
       </div>
 
-      {/* Cart badge */}
+      {/* Cart Count Badge */}
       {cartCount > 0 && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
-          padding: "4px 10px", borderRadius: 99,
-          background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
-          color: "#818cf8", fontSize: 11, fontWeight: 600,
-        }}>
+        <div className="flex items-center gap-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs px-2.5 py-1 rounded-full font-medium">
           <ShoppingCart size={11} />
           <span>{cartCount}</span>
         </div>
       )}
 
-      <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
+      <div className="w-px h-5 bg-white/10" />
 
-      {/* Role switcher */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+      {/* Role switcher (demo) */}
+      <div className="flex items-center gap-1">
         {Object.values(ROLES).map((r) => (
           <button
             key={r}
             onClick={() => switchRole(r)}
-            style={{
-              fontSize: 10, padding: "3px 8px", borderRadius: 6, border: "1px solid",
-              fontWeight: 600, cursor: "pointer", textTransform: "capitalize",
-              transition: "all 0.15s", whiteSpace: "nowrap", fontFamily: "'DM Sans', sans-serif",
-              background: role === r ? ROLE_STYLE[r]?.bg : "rgba(255,255,255,0.04)",
-              color: role === r ? ROLE_STYLE[r]?.text : "rgba(255,255,255,0.3)",
-              borderColor: role === r ? ROLE_STYLE[r]?.border : "rgba(255,255,255,0.08)",
-            }}
+            className={clsx(
+              "text-[10px] px-2 py-0.5 rounded border capitalize font-medium transition-all",
+              role === r
+                ? ROLE_COLORS[r]
+                : "bg-white/5 text-white/30 border-white/10 hover:text-white/50"
+            )}
           >
             {r}
           </button>
@@ -127,59 +101,32 @@ export default function Navbar({ onOpenSettings }) {
 
       {/* Reports */}
       {canViewReports(role) && (
-        <Link
-          to="/dashboard"
-          title="Dashboard"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-            color: "rgba(255,255,255,0.4)", background: "transparent",
-            border: "none", cursor: "pointer", textDecoration: "none",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
+        <button
+          onClick={onOpenReports}
+          className="p-2 text-white/40 hover:text-white/70 hover:bg-white/5 rounded-lg transition-colors"
+          title="Reports"
         >
           <BarChart2 size={17} />
-        </Link>
+        </button>
       )}
 
       {/* Settings */}
       <button
         onClick={onOpenSettings}
+        className="p-2 text-white/40 hover:text-white/70 hover:bg-white/5 rounded-lg transition-colors"
         title="Settings"
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          color: "rgba(255,255,255,0.4)", background: "transparent",
-          border: "none", cursor: "pointer", transition: "all 0.15s",
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
       >
         <Settings size={17} />
       </button>
 
       {/* User */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, paddingLeft: 4 }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-          background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, fontWeight: 700, color: "#fff", textTransform: "uppercase",
-        }}>
+      <div className="flex items-center gap-2 pl-1">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold uppercase select-none">
           {user?.name?.[0] ?? "U"}
         </div>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span className="text-white/60 text-sm hidden lg:block truncate max-w-[120px]">
           {user?.name ?? "Demo User"}
         </span>
-        <div style={{
-          fontSize: 9, padding: "2px 7px", borderRadius: 4, fontWeight: 700,
-          background: rs.bg, color: rs.text, border: `1px solid ${rs.border}`,
-          textTransform: "uppercase", letterSpacing: "0.06em",
-        }}>
-          {role ?? "cashier"}
-        </div>
       </div>
     </header>
   );
