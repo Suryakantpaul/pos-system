@@ -1,20 +1,22 @@
-/**
- * App.jsx
- * Root application with routing and global providers
- */
-
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import POSPage from "./pages/POSPage";
+import LoginPage from "./pages/LoginPage";
+import { useAuthStore } from "./store/authStore";
 
-// Lazy-load heavier pages
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
 
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Toast notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -44,10 +46,19 @@ export default function App() {
         }
       >
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<Navigate to="/pos" replace />} />
-          <Route path="/pos" element={<POSPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="*" element={<Navigate to="/pos" replace />} />
+          <Route path="/pos" element={
+            <ProtectedRoute>
+              <POSPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </React.Suspense>
     </BrowserRouter>
