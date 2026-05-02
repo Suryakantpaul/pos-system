@@ -22,6 +22,7 @@ import { useProductStore } from "../store/productStore";
 import { useDebounce, useOnlineStatus, useCartKeyboard } from "../hooks";
 import { productApi, orderApi } from "../services/api";
 import { parseApiError, isBarcode } from "../utils";
+import { useAuthStore } from "../store/authStore";
 
 // ─── Mock data (replace with real API in production) ─────────────
 
@@ -83,25 +84,31 @@ export default function POSPage() {
   });
 
   // ── Initial product load ─────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // In production: const res = await productApi.list(1, 50);
-        // Using mock data for demo:
-        await new Promise((r) => setTimeout(r, 600)); // simulate network
-        setProducts(MOCK_PRODUCTS);
-        setCategories(MOCK_CATEGORIES);
-      } catch (err) {
-        setError(parseApiError(err));
-        toast.error("Failed to load products.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []); // eslint-disable-line
+ const load = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const token = useAuthStore.getState().token;
+    const res = await fetch("http://localhost:5000/api/products", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    if (data.success) {
+      const cats = [...new Set(data.products.map((p) => p.category))];
+      setProducts(data.products);
+      setCategories(cats);
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (err) {
+    setError("Failed to load products.");
+    toast.error("Failed to load products.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── Debounced search ─────────────────────────────────────────
   useEffect(() => {
