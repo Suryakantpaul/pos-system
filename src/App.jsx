@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import POSPage from "./pages/POSPage";
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import { useAuthStore } from "./store/authStore";
 
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
@@ -47,6 +48,7 @@ export default function App() {
       >
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/" element={<Navigate to="/pos" replace />} />
           <Route path="/pos" element={
             <ProtectedRoute>
