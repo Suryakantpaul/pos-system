@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db";
 import { ENV } from "./config/env";
+import { connectRedis } from "./config/redis";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
@@ -24,6 +25,7 @@ app.get("/api/health", (req: Request, res: Response) => {
 
 const start = async () => {
   await connectDB();
+  await connectRedis();
   app.listen(ENV.PORT, () => {
     console.log("Server running on port " + ENV.PORT);
   });

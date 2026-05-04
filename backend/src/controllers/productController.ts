@@ -1,12 +1,22 @@
 import { Request, Response } from "express";
 import Product from "../models/Product";
+import { getCache, setCache, deleteCache } from "../config/redis";
 
-// ── Get all products ──────────────────────────────────────────────
+const CACHE_KEY = "products:all";
+const CACHE_TTL = 300;
+
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const { category, search } = req.query;
-    const filter: any = { isActive: true };
+    const cacheKey = category || search ? CACHE_KEY + ":" + category + ":" + search : CACHE_KEY;
 
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      res.status(200).json({ success: true, products: JSON.parse(cached), fromCache: true });
+      return;
+    }
+
+    const filter: any = { isActive: true };
     if (category) filter.category = category;
     if (search) {
       filter.$or = [
@@ -16,13 +26,13 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     }
 
     const products = await Product.find(filter).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, products });
+    await setCache(cacheKey, JSON.stringify(products), CACHE_TTL);
+    res.status(200).json({ success: true, products, fromCache: false });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
 
-// ── Get single product ────────────────────────────────────────────
 export const getProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const product = await Product.findById(req.params.id);
@@ -36,46 +46,38 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// ── Create product ────────────────────────────────────────────────
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const product = await Product.create(req.body);
+    await deleteCache(CACHE_KEY);
     res.status(201).json({ success: true, product });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
 
-// ── Update product ────────────────────────────────────────────────
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!product) {
       res.status(404).json({ success: false, message: "Product not found" });
       return;
     }
+    await deleteCache(CACHE_KEY);
     res.status(200).json({ success: true, product });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
 
-// ── Delete product ────────────────────────────────────────────────
 export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    );
+    const product = await Product.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
     if (!product) {
       res.status(404).json({ success: false, message: "Product not found" });
       return;
     }
+    await deleteCache(CACHE_KEY);
     res.status(200).json({ success: true, message: "Product deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error });

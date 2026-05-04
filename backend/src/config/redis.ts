@@ -1,6 +1,4 @@
-const fs = require('fs');
-
-const content = `import { createClient } from "redis";
+import { createClient } from "redis";
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
@@ -29,7 +27,4 @@ export const deleteCache = async (key: string): Promise<void> => {
   try { await redisClient.del(key); } catch {}
 };
 
-export default redisClient;`;
-
-fs.writeFileSync('src/config/redis.ts', content, {encoding: 'utf8'});
-console.log('Done!');
+export default redisClient;
