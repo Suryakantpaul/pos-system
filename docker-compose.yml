@@ -1,7 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const dockerCompose = `version: "3.8"
+version: "3.8"
 
 services:
   backend:
@@ -32,7 +29,3 @@ services:
 
 volumes:
   mongo_data:
-`;
-
-fs.writeFileSync(path.join(__dirname, '..', 'docker-compose.yml'), dockerCompose, {encoding: 'utf8'});
-console.log('docker-compose.yml created!');
