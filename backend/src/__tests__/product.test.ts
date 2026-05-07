@@ -1,6 +1,4 @@
-const fs = require('fs');
-
-const content = `import request from "supertest";
+import request from "supertest";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -65,7 +63,4 @@ describe("Product API", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
   });
-});`;
-
-fs.writeFileSync('src/__tests__/product.test.ts', content, {encoding: 'utf8'});
-console.log('Done!');
+});

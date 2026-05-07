@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Order from "../models/Order";
-import Product from "../models/Product";
+import Product from "../models/ProductModel";
 import { AuthRequest } from "../middleware/authMiddleware";
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {

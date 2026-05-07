@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Product from "../models/Product";
+import Product from "../models/ProductModel";
 import { getCache, setCache, deleteCache } from "../config/redis";
 
 const CACHE_KEY = "products:all";
