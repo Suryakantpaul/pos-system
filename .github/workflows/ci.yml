@@ -1,7 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const content = `name: CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -71,9 +68,3 @@ jobs:
 
       - name: Build frontend
         run: npm run build
-`;
-
-const dir = path.join(__dirname, '..', '.github', 'workflows');
-if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-fs.writeFileSync(path.join(dir, 'ci.yml'), content, {encoding: 'utf8'});
-console.log('GitHub Actions workflow created!');
