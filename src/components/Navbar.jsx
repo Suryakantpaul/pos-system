@@ -130,15 +130,7 @@ export default function Navbar({ onOpenSettings, onOpenReports }) {
         </button>
       )}
 
-      {/* Settings */}
-      <button
-        onClick={onOpenSettings}
-        className="p-2 text-white/40 hover:text-white/70 hover:bg-white/[0.06] rounded-lg transition-all duration-200 hover:rotate-45 transform"
-        title="Settings"
-        style={{ transition: "transform 0.3s ease, color 0.2s ease, background 0.2s ease" }}
-      >
-        <Settings size={17} />
-      </button>
+      
 
       {/* User Menu */}
       <div className="relative">
@@ -200,31 +192,40 @@ export default function Navbar({ onOpenSettings, onOpenReports }) {
               </div>
 
               {/* Actions */}
-              <div className="p-2">
-                {canViewReports(role) && (
-                  <button
-                    onClick={() => { onOpenReports?.(); setShowUserMenu(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg text-sm transition-all"
-                  >
-                    <BarChart2 size={14} />
-                    Reports
-                  </button>
-                )}
-                <button
-                  onClick={() => { onOpenSettings?.(); setShowUserMenu(false); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg text-sm transition-all"
-                >
-                  <Settings size={14} />
-                  Settings
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg text-sm transition-all mt-1"
-                >
-                  <LogOut size={14} />
-                  Sign Out
-                </button>
-              </div>
+              {/* Actions */}
+<div className="p-2">
+  {canViewReports(role) && (
+    <button
+      onClick={() => { window.location.href = "/dashboard"; setShowUserMenu(false); }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg text-sm transition-all"
+    >
+      <BarChart2 size={14} />
+      Dashboard & Reports
+    </button>
+  )}
+  <button
+    onClick={() => { onOpenSettings?.(); setShowUserMenu(false); }}
+    className="w-full flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg text-sm transition-all"
+  >
+    <Settings size={14} />
+    Settings
+  </button>
+  <button
+    onClick={() => { window.location.href = "/signup"; setShowUserMenu(false); }}
+    className="w-full flex items-center gap-2.5 px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.06] rounded-lg text-sm transition-all"
+  >
+    <Users size={14} />
+    Add New Staff
+  </button>
+  <div className="h-px bg-white/[0.06] my-1.5" />
+  <button
+    onClick={handleLogout}
+    className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg text-sm transition-all"
+  >
+    <LogOut size={14} />
+    Sign Out
+  </button>
+</div>
             </div>
           </>
         )}

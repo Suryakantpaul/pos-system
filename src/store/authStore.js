@@ -6,6 +6,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+
 export const ROLES = {
   CASHIER: "cashier",
   MANAGER: "manager",
