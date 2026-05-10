@@ -1,79 +1,17 @@
 const fs = require('fs');
-const path = require('path');
 
-const content = `name: CI/CD Pipeline
+const content = `import { Router } from "express";
+import { signup, login, getMe, forgotPassword } from "../controllers/authController";
+import { protect } from "../middleware/authMiddleware";
 
-on:
-  push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
+const router = Router();
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+router.post("/signup", signup);
+router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.get("/me", protect, getMe);
 
-    services:
-      mongodb:
-        image: mongo:6
-        ports:
-          - 27017:27017
+export default router;`;
 
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm install
-
-      - name: Run TypeScript type check
-        working-directory: backend
-        run: npx tsc --noEmit
-
-      - name: Run unit tests
-        working-directory: backend
-        run: npm test
-        env:
-          MONGODB_URI: mongodb://localhost:27017/pos-test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret-key
-          JWT_EXPIRES_IN: 7d
-          PORT: 5000
-
-  build:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Build frontend
-        run: npm run build
-`;
-
-const dir = path.join(__dirname, '..', '.github', 'workflows');
-if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-fs.writeFileSync(path.join(dir, 'ci.yml'), content, {encoding: 'utf8'});
-console.log('GitHub Actions workflow created!');
+fs.writeFileSync('src/routes/authRoutes.ts', content, {encoding: 'utf8'});
+console.log('Done!');

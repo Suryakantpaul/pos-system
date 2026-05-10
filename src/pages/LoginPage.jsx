@@ -141,7 +141,15 @@ export default function LoginPage() {
 
             {/* Password */}
             <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateX(0)' : 'translateX(-16px)', transition: 'all 0.5s ease 0.4s' }}>
-              <label className="text-white/50 text-xs font-medium mb-2 block uppercase tracking-wider">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-white/50 text-xs font-medium uppercase tracking-wider">Password</label>
+                <a
+                  href="/forgot-password"
+                  className="text-white/30 hover:text-indigo-400 text-xs transition-colors hover:underline underline-offset-2"
+                >
+                  Forgot password?
+                </a>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -205,4 +213,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}

@@ -4,11 +4,11 @@ import { Toaster } from "react-hot-toast";
 import POSPage from "./pages/POSPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import { useAuthStore } from "./store/authStore";
 
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 
-// Protected route wrapper
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -49,6 +49,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/" element={<Navigate to="/pos" replace />} />
           <Route path="/pos" element={
             <ProtectedRoute>
