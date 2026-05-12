@@ -56,7 +56,7 @@ export default function POSPage() {
       setError(null);
       try {
         const token = useAuthStore.getState().token;
-        const res = await fetch("https://lid-cure-variety.ngrok-free.dev/api/products", {
+        const res = await fetch("http://localhost:5000/api/products", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

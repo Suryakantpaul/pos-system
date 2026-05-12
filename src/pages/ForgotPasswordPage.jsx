@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     if (!email) { toast.error("Please enter your email"); return; }
     setIsLoading(true);
     try {
-      const res = await fetch("https://lid-cure-variety.ngrok-free.dev/api/auth/forgot-password", {
+      const res = await fetch("https://lid-cure-variety.ngrok-free.dev/api/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, newPassword: "temp" }),
