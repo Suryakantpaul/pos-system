@@ -62,9 +62,9 @@ const ProductCard = memo(({ product, onAdd, justAdded, index }) => {
     >
       {/* Image Container */}
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-white/[0.04]">
-        {product.imageUrl && !imgError ? (
+        {(product.image || product.imageUrl) && !imgError ? (
           <img
-            src={product.imageUrl}
+            src={product.image || product.imageUrl}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"

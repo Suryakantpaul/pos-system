@@ -64,7 +64,7 @@ export const useCartStore = create(
                 price: product.price,
                 quantity: 1,
                 discount: 0,
-                imageUrl: product.imageUrl ?? null,
+                imageUrl: product.image ?? product.imageUrl ?? null,
                 category: product.category ?? "",
               },
             ];

@@ -1,43 +1,45 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import Order from "../models/Order";
 import Product from "../models/ProductModel";
 import { AuthRequest } from "../middleware/authMiddleware";
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
     const { items, paymentMethod } = req.body;
     let subtotal = 0;
     const orderItems = [];
+
     for (const item of items) {
-      const product = await Product.findById(item.productId).session(session);
+      const product = await Product.findById(item.productId);
       if (!product) {
-        await session.abortTransaction();
-        res.status(404).json({ success: false, message: "Product not found" });
+        res.status(404).json({ success: false, message: "Product not found: " + item.productId });
         return;
       }
       if (product.stock < item.quantity) {
-        await session.abortTransaction();
         res.status(400).json({ success: false, message: "Insufficient stock for " + product.name });
         return;
       }
       product.stock -= item.quantity;
-      await product.save({ session });
+      await product.save();
       subtotal += product.price * item.quantity;
       orderItems.push({ product: product._id, name: product.name, sku: product.sku, price: product.price, quantity: item.quantity });
     }
+
     const tax = subtotal * 0.08;
     const total = subtotal + tax;
-    const [order] = await Order.create([{ items: orderItems, subtotal, tax, total, paymentMethod: paymentMethod || "cash", cashier: req.user?.id }], { session });
-    await session.commitTransaction();
+
+    const order = await Order.create({
+      items: orderItems,
+      subtotal,
+      tax,
+      total,
+      paymentMethod: paymentMethod || "cash",
+      cashier: req.user?.id,
+    });
+
     res.status(201).json({ success: true, order });
   } catch (error) {
-    await session.abortTransaction();
-    res.status(500).json({ success: false, message: "Transaction failed", error });
-  } finally {
-    session.endSession();
+    res.status(500).json({ success: false, message: "Server error", error });
   }
 };
 

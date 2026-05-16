@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" width="280" height="80">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon background -->
+  <rect x="0" y="8" width="64" height="64" rx="14" fill="url(#g1)"/>
+  <rect x="2" y="10" width="60" height="28" rx="11" fill="white" fill-opacity="0.12"/>
+
+  <!-- Cart body -->
+  <path d="M14 36 L20 36 L25 54 L50 54 L55 42 L24 42" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Cart handle -->
+  <path d="M11 33 L16 33" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <!-- Cart wheels -->
+  <circle cx="30" cy="59" r="4" fill="white" fill-opacity="0.9"/>
+  <circle cx="48" cy="59" r="4" fill="white" fill-opacity="0.9"/>
+  <!-- Checkmark inside cart -->
+  <path d="M33 46 L38 51 L48 41" fill="none" stroke="white" stroke-width="2.5" 
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Main text RetailOS -->
+  <text x="76" y="46" 
+        font-family="Georgia, serif" 
+        font-size="28" 
+        font-weight="700"
+        letter-spacing="-1"
+        fill="url(#g2)">Retail</text>
+  <text x="178" y="46"
+        font-family="Georgia, serif"
+        font-size="28"
+        font-weight="700" 
+        letter-spacing="-1"
+        fill="#1e1b4b">OS</text>
+
+  <!-- Underline -->
+  <line x1="76" y1="52" x2="220" y2="52" 
+        stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Subtitle -->
+  <text x="76" y="67"
+        font-family="Arial, sans-serif"
+        font-size="7"
+        letter-spacing="2"
+        fill="#6366f1"
+        font-weight="500">OMNICHANNEL POS</text>
+</svg>

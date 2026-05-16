@@ -25,7 +25,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Attach auth token from persisted Zustand store
     const raw = localStorage.getItem("pos-auth");
     if (raw) {
       try {
@@ -47,7 +46,6 @@ api.interceptors.response.use(
   async (error) => {
     const { config, response } = error;
 
-    // Auto-retry on network errors (up to 3 times)
     config._retryCount = config._retryCount ?? 0;
     if (!response && config._retryCount < 3) {
       config._retryCount += 1;
@@ -56,7 +54,6 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // Token expired → logout
     if (response?.status === 401) {
       localStorage.removeItem("pos-auth");
       window.location.href = "/login";
@@ -67,7 +64,6 @@ api.interceptors.response.use(
 );
 
 // ─── Offline Queue ───────────────────────────────────────────────
-// Orders created offline are stored here and synced on reconnect
 
 const OFFLINE_QUEUE_KEY = "pos-offline-queue";
 
@@ -111,6 +107,17 @@ export const productApi = {
   /** Get paginated product list */
   list: (page = 1, limit = 20, category = "") =>
     api.get("/products", { params: { page, limit, category } }),
+
+  // ── Admin CRUD ────────────────────────────────────────
+
+  /** Create a new product (admin / manager) */
+  create: (payload) => api.post("/products", payload),
+
+  /** Update a product by ID (admin / manager) */
+  update: (id, payload) => api.put(`/products/${id}`, payload),
+
+  /** Delete a product by ID (admin only) */
+  delete: (id) => api.delete(`/products/${id}`),
 };
 
 // ─── Order Endpoints ─────────────────────────────────────────────
